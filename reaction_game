@@ -1,0 +1,210 @@
+
+#include <stdlib.h>
+#include <time.h>
+// pari vakiota helpottamaan koodin lukua
+#define EI 0   
+#define KYLLA 1
+
+// muuttujien maarittely
+int led1Pin = 9; // led pinnissa 9 
+int led2Pin = 10; // led pinnissa 10
+int led3Pin = 11; // led pinnissa 11
+int led4Pin = 12; // led pinnissa 12
+
+int piste = 0;
+int ranNum;  // tahan arvotaan uusi luku 9-12
+int oldRanNum=0;  // tassa säilytetään edellistä arvottua lukua
+int ranDel;
+int ledPalaa=EI; 
+int nappainPainettu=EI;
+int oikein=EI;
+int paloaika = 0; // kuinka kauan ledia poltetaan
+int paloajat[30] ={200,180,160,140,130,120,110,100,95,90,85,80,75,70,65,60}; // ajat x 10ms
+byte my_var;
+const byte interruptPin = 2;
+int loppu = EI;
+
+
+void setup()
+{
+
+  // asetetaan pinnit 9-12 ulostuloksi 
+  pinMode(led1Pin, OUTPUT); // asetetaan pinni 9 ulostuloksi
+  pinMode(led2Pin, OUTPUT); // asetetaan pinni 10 ulostuloksi
+  pinMode(led3Pin, OUTPUT); // asetetaan pinni 11 ulostuloksi
+  pinMode(led4Pin, OUTPUT); // asetetaan pinni 12 ulostuloksi
+  // asetetaan pinnit  sisaantuloksi
+  DDRC = B11110000; //nappaimista
+  PORTC = B00001111;
+  
+  
+  DDRD = B11111111;  //7seg
+  
+  randomSeed(analogRead(0)); // asetetaan siemenluku satunnaislukugeneraattoriin
+  
+  Serial.begin(9600); //asetetaan datan siirtonopeus 9600 b/s
+
+  ranNum=random(9,13); // arvotaan luku 9-12
+  digitalWrite(ranNum, HIGH); // asetetaan satunnainen ledi palamaan
+  oldRanNum=ranNum; 
+  ledPalaa = KYLLA; 
+  paloaika = paloajat[piste]; // alkuarvo 2 s
+
+  attachInterrupt(digitalPinToInterrupt(interruptPin), blink, FALLING);
+
+}  
+
+void loop()
+{
+  if(loppu == KYLLA)
+{
+      digitalWrite(led1Pin, HIGH); 
+      digitalWrite(led2Pin, HIGH); 
+      digitalWrite(led3Pin, HIGH); 
+      digitalWrite(led4Pin, HIGH);
+      delay(100);
+      digitalWrite(led1Pin, LOW); 
+      digitalWrite(led2Pin, LOW); 
+      digitalWrite(led3Pin, LOW); 
+      digitalWrite(led4Pin, LOW);
+      delay(100);
+  
+}
+else
+{
+   
+  my_var = PINC;
+  my_var=my_var & 0x0F;
+
+if (ledPalaa == EI)
+{// led ei pala, niin sytytetaan uusi led
+    do {
+    ranNum=random(9,13); // arvotaan luku 9-12
+  }while(oldRanNum == ranNum);//arvotaan niin kauan että saadaan uusi luku
+    oldRanNum = ranNum;
+  digitalWrite(ranNum, HIGH); // asetetaan satunnainen ledi palamaan
+    ledPalaa = KYLLA; // nyt ledi on palamassa
+    paloaika = paloajat[piste]; // asetetaan yksilollinen aika ledin paallaololle taulukosta
+  //paloaika = 200; // asetetaan kiintea paloaika 2s
+}
+
+
+else if (ranNum == led1Pin && my_var == B00001110)  
+{ // tosi, jos led1 palaa ja painettiin button1 nappia
+  piste++; // sait pisteet
+  digitalWrite(ranNum, LOW); // sammutetaan palava ledi
+  ledPalaa = EI;
+}
+else if (ranNum == led2Pin && my_var == B00001101) 
+{ // tosi, jos led2 palaa ja painettiin button2 nappia
+    piste++; // sait pisteet
+  digitalWrite(ranNum, LOW); // sammutetaan palava ledi
+  ledPalaa = EI; 
+}
+else if (ranNum == led3Pin && my_var == B00001011) 
+{ // tosi, jos led3 palaa ja painettiin button3 nappia
+    piste++; // sait pisteet
+  digitalWrite(ranNum, LOW); // sammutetaan palava ledi
+  ledPalaa = EI;
+}
+else if (ranNum == led4Pin && my_var == B00000111) 
+{ // tosi, jos led4 palaa ja painettiin button4 nappia
+    piste++; // sait pisteet
+  digitalWrite(ranNum, LOW); // sammutetaan palava ledi
+  ledPalaa = EI;
+}
+else 
+{
+ paloaika--; // ei oikeata painallusta
+  if (paloaika == 0)
+    {// Game Over! asetetaan kaikki ledit palamaan
+      digitalWrite(led1Pin, HIGH); 
+      digitalWrite(led2Pin, HIGH); 
+      digitalWrite(led3Pin, HIGH); 
+      digitalWrite(led4Pin, HIGH); 
+  
+    }
+}
+
+   switch(piste)
+   {
+    case 0:
+        PORTD=B01111111; //0 piste palaa
+    break;
+    case 1:
+        PORTD=B10111111; //1 0001
+    break;
+  case 2:
+        PORTD=B11011111; //2 0010
+    break;
+  case 3:
+        PORTD=B10011111; //3 0011
+    break;
+  case 4:
+        PORTD=B11110111; //4 0100
+    break;
+  case 5:
+        PORTD=B10110111; //5 0101
+    break;
+  case 6:
+        PORTD=B11010111; //6 0110
+    break;
+  case 7:
+        PORTD=B10010111; //7 0111
+    break;
+  case 8: 
+        PORTD=B11101111; //8 1000
+    break;
+  case 9:
+        PORTD=B10101111; //9 1001
+    break;
+  case 10:
+        PORTD=B11001111; //10 1010
+    break;        
+  case 11:
+        PORTD=B10001111; //11 1011       
+    break;
+  case 12:
+        PORTD=B11100111; //12 1100       
+    break;
+  case 13:
+        PORTD=B10100111; //13 1101       
+    break;
+  case 14:
+        PORTD=B11000111; //14 1110
+    break;
+  case 15:
+        PORTD=B10000111; //15 1111
+    break;
+  case 16:
+        PORTD=B00000011; //16 
+      break;
+   }  
+delay(10);
+}
+}
+
+   void blink()
+{
+      digitalWrite(led1Pin, HIGH); 
+      digitalWrite(led2Pin, HIGH); 
+      digitalWrite(led3Pin, HIGH); 
+      digitalWrite(led4Pin, HIGH); 
+      delay(200000);
+      digitalWrite(led1Pin, LOW); 
+      digitalWrite(led2Pin, LOW); 
+      digitalWrite(led3Pin, LOW); 
+      digitalWrite(led4Pin, LOW);
+      delay(200000); 
+         
+         if(piste == 0 )
+      {
+         digitalWrite(ranNum, HIGH);
+         paloaika = paloajat[piste];
+      }
+      else
+        loppu=KYLLA;
+
+      
+          
+}
